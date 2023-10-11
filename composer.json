@@ -1,0 +1,32 @@
+{
+  "name": "kasperfm/seat-miningexport",
+  "description": "Export the mining ledger of corp members in SeAT",
+  "type": "seat-plugin",
+  "license": "GPL-2.0-only",
+  "authors": [
+    {
+      "name": "kasperfm",
+      "email": "kasper.faerch@gmail.com"
+    }
+  ],
+  "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "KasperFM\\Seat\\MiningExport\\": "src/"
+        }
+    },
+    
+    "extra": {
+        "laravel": {
+            "providers": [
+                "KasperFM\\Seat\\MiningExport\\MiningExportServiceProvider"
+
+            ]
+        }
+    },
+    "require": {
+        "eveseat/services": "^4.0",
+        "eveseat/eveapi": "^4.0",
+        "eveseat/web": "^4.0"
+    }
+}
