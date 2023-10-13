@@ -18,12 +18,17 @@ class ExportController extends Controller
         return view('miningexport::index');
     }
 
-    public function generateOutput(Request $request)
+    public function requestToGenerate(Request $request)
     {
         $fromDate = $request->get('from_date');
         $toDate = $request->get('to_date');
 
-        $filename = 'corp-mining-ledger';
+        $this->generateOutput($fromDate, $toDate);
+    }
+
+    public function generateOutput($fromDate, $toDate)
+    {
+        $filename = 'corp-mining-ledger-' . $fromDate . '_' . $toDate;
         $entries = CharacterMining::select('date', 'type_id', 'quantity', 'character_id')
             ->whereBetween('date', [$fromDate, $toDate])
             ->orderBy('time', 'asc')
@@ -55,8 +60,11 @@ class ExportController extends Controller
         }
 
         $output = fopen("php://output",'w') or die("Can't open php://output");
-        header("Content-Type:application/csv");
+
         header("Content-Disposition:attachment;filename=".$filename.".csv");
+        header("Cache-control: private");
+        header("Content-type: application/force-download");
+        header("Content-transfer-encoding: binary\n");
 
         fputcsv($output, array('Type', 'Quantity', 'Volume'));
         foreach($result as $item) {

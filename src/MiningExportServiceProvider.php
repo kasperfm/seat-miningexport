@@ -47,7 +47,6 @@ class MiningExportServiceProvider extends AbstractSeatPlugin
      */
     public function add_routes()
     {
-
         if (!$this->app->routesAreCached())
             include __DIR__ . '/Routes/web.php';
     }

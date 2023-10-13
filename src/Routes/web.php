@@ -2,7 +2,7 @@
     Route::group([
         'namespace' => 'KasperFM\Seat\MiningExport\Http\Controllers',
         'prefix' => 'miningexport',
-        'middleware' => ['web', 'auth']
+        'middleware' => ['web', 'auth', 'can:miningexport.export']
     ], function () {
         Route::get('/', [
             'as' => 'miningexport.index',
@@ -11,6 +11,6 @@
 
         Route::get('/generate', [
             'as' => 'miningexport.generate',
-            'uses' => 'ExportController@generateOutput'
+            'uses' => 'ExportController@requestToGenerate'
         ]);
     });

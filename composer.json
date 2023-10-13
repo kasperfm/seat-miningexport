@@ -20,7 +20,6 @@
         "laravel": {
             "providers": [
                 "KasperFM\\Seat\\MiningExport\\MiningExportServiceProvider"
-
             ]
         }
     },
