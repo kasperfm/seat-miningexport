@@ -5,8 +5,9 @@
   "license": "GPL-2.0-only",
   "authors": [
     {
-      "name": "kasperfm",
-      "email": "kasper.faerch@gmail.com"
+      "name": "Kasper Færch Mikkelsen",
+      "email": "kasper.faerch@gmail.com",
+      "role": "Developer"
     }
   ],
   "minimum-stability": "stable",
