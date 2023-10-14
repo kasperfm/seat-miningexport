@@ -2,7 +2,9 @@
 
 namespace KasperFM\Seat\MiningExport\Http\Controllers;
 
+use KasperFM\Seat\MiningExport\Models\TaxSetting;
 use Seat\Eveapi\Models\Industry\CharacterMining;
+use Seat\Eveapi\Models\Sde\InvType;
 use Seat\Web\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -16,6 +18,40 @@ class ExportController extends Controller
     public function index()
     {
         return view('miningexport::index');
+    }
+
+    public function taxSettings()
+    {
+        $moonOreGroupTypes = [
+            1923, //r64
+            1922, //r32
+            1921, //r16
+            1920, //r8
+            1884, //r4
+        ];
+
+        $moonOres = InvType::select(['typeName', 'typeID', 'groupID', 'volume'])
+            ->whereIn('groupID', $moonOreGroupTypes)
+            ->orderBy('typeID')
+            ->get()
+            ->where('volume', '!=', '0.1') // Exclude compressed ore
+            ->groupBy('groupID');
+
+        $taxSettingValues = TaxSetting::get();
+
+        return view('miningexport::settings', ['moonOres' => $moonOres, 'taxSettingValues' => $taxSettingValues]);
+    }
+
+    public function saveTaxSettings(Request $request)
+    {
+        foreach ($request->get('taxvalues') ?? [] as $setting) {
+            TaxSetting::updateOrCreate(
+                ['type_id' => $setting['type_id'], 'group_id' => $setting['group_id']],
+                ['tax' => $setting['value']]
+            );
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function requestToGenerate(Request $request)
