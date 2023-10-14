@@ -25,11 +25,8 @@
 
     <script type="application/javascript">
         $( function() {
-            $("#datepicker_from").datepicker({ minDate: "-3M", maxDate: "+1D" });
-            $("#datepicker_from").datepicker("option", "dateFormat", "yy-mm-dd");
-
-            $("#datepicker_to").datepicker({ minDate: "-3M", maxDate: "+1M +1D" });
-            $("#datepicker_to").datepicker("option", "dateFormat", "yy-mm-dd");
+            $("#datepicker_from").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
+            $("#datepicker_to").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
 
             $("#generate_mining_csv").click(function () {
                 var params = {
