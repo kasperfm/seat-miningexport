@@ -16,7 +16,8 @@
     <hr>
 
     <p>From date: <input type="text" id="datepicker_from"> - To date: <input type="text" id="datepicker_to"></p>
-    <button id="generate_mining_csv">Generate report</button>
+    <hr>
+    <button class="btn btn-info" id="generate_mining_csv">Generate Report</button>  <button class="btn btn-warning" id="generate_tax_csv">Tax Report</button>
 @endsection
 
 @push('javascript')
@@ -25,13 +26,7 @@
 
     <script type="application/javascript">
         $( function() {
-            $("#datepicker_from").datepicker({ minDate: "-3M", maxDate: "+1D" });
-            $("#datepicker_from").datepicker("option", "dateFormat", "yy-mm-dd");
-
-            $("#datepicker_to").datepicker({ minDate: "-3M", maxDate: "+1M +1D" });
-            $("#datepicker_to").datepicker("option", "dateFormat", "yy-mm-dd");
-
-            $("#generate_mining_csv").click(function () {
+            function generateReport(url) {
                 var params = {
                     from_date: $("#datepicker_from").val(),
                     to_date: $("#datepicker_to").val()
@@ -43,7 +38,7 @@
                 }
 
                 var str = jQuery.param( params );
-                var reportUrl = "{{ route('miningexport.generate') }}?" + str;
+                var reportUrl = url + str;
 
                 var newWindow = window.open(reportUrl, '_blank');
                 if (newWindow) {
@@ -51,6 +46,17 @@
                 } else {
                     alert('Please allow popups for this website');
                 }
+            }
+
+            $("#datepicker_from").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
+            $("#datepicker_to").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
+
+            $("#generate_mining_csv").click(function () {
+                generateReport("{{ route('miningexport.generate') }}?");
+            });
+
+            $("#generate_tax_csv").click(function () {
+                generateReport("{{ route('miningexport.taxgenerate') }}?");
             });
         });
     </script>
