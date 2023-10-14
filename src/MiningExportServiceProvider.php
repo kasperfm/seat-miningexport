@@ -24,6 +24,9 @@ class MiningExportServiceProvider extends AbstractSeatPlugin
 
         // Add the views for MiningExport
         $this->add_views();
+
+        // Register migrations
+        $this->add_migrations();
     }
 
     public function register()
@@ -40,6 +43,11 @@ class MiningExportServiceProvider extends AbstractSeatPlugin
         $this->mergeConfigFrom(
             __DIR__ . '/Config/miningexport.sidebar.php', 'package.sidebar');
 
+    }
+
+    private function add_migrations()
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/database/migrations/');
     }
 
     /**
