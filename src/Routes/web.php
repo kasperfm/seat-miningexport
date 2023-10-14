@@ -25,4 +25,9 @@
             'as' => 'miningexport.generate',
             'uses' => 'ExportController@requestToGenerate'
         ]);
+
+        Route::get('/taxgenerate', [
+            'as' => 'miningexport.taxgenerate',
+            'uses' => 'ExportController@requestToGenerateTaxReport'
+        ]);
     });

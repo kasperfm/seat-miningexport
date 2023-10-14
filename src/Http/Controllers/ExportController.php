@@ -62,6 +62,72 @@ class ExportController extends Controller
         $this->generateOutput($fromDate, $toDate);
     }
 
+    public function requestToGenerateTaxReport(Request $request)
+    {
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+
+        $this->generateTaxReportOutput($fromDate, $toDate);
+    }
+
+    private function buildCSV($filename, $input)
+    {
+        $output = fopen("php://output",'w') or die("Can't open php://output");
+
+        header("Content-Disposition:attachment;filename=".$filename.".csv");
+        header("Cache-control: private");
+        header("Content-type: application/force-download");
+        header("Content-transfer-encoding: binary\n");
+
+        fputcsv($output, array('Type', 'Quantity', 'Volume'));
+        foreach($input as $item) {
+            fputcsv($output, $item);
+        }
+        fclose($output) or die("Can't close php://output");
+    }
+
+    public function generateTaxReportOutput($fromDate, $toDate)
+    {
+        $filename = 'tax-corp-mining-ledger-' . $fromDate . '_' . $toDate;
+        $entries = CharacterMining::select('date', 'type_id', 'quantity', 'character_id')
+            ->whereBetween('date', [$fromDate, $toDate])
+            ->orderBy('time', 'asc')
+            ->get()
+            ->groupBy('type_id');
+
+        $result = [];
+
+        foreach($entries as $entry) {
+            $quantity = 0;
+            $taxedQuantity = 0;
+            $volumeValue = 0;
+            $type = null;
+            foreach ($entry as $mining) {
+                $quantity += $mining->quantity;
+
+                if (!$type) {
+                    $type = $mining->type;
+                    $volumeValue = $mining->type->volume;
+
+                }
+            }
+
+            $setting = TaxSetting::where('type_id', $type->typeID)->first();
+            $moonOreTax = !empty($setting) ? $setting->tax : 0;
+            $taxedQuantity = ($quantity / 100) * $moonOreTax;
+
+            $volume = $taxedQuantity * $volumeValue;
+
+            $result[$type->typeName] = [
+                'type' => $type->typeName,
+                'quantity' => $taxedQuantity,
+                'volume' => $volume
+            ];
+        }
+
+        $this->buildCSV($filename, $result);
+    }
+
     public function generateOutput($fromDate, $toDate)
     {
         $filename = 'corp-mining-ledger-' . $fromDate . '_' . $toDate;
@@ -81,31 +147,20 @@ class ExportController extends Controller
                 $quantity += $mining->quantity;
 
                 if (!$type) {
-                    $type = $mining->type->typeName;
+                    $type = $mining->type;
                     $volumeValue = $mining->type->volume;
                 }
             }
 
             $volume = $quantity * $volumeValue;
 
-            $result[$type] = [
-                'type' => $type,
+            $result[$type->typeName] = [
+                'type' => $type->typeName,
                 'quantity' => $quantity,
                 'volume' => $volume
             ];
         }
 
-        $output = fopen("php://output",'w') or die("Can't open php://output");
-
-        header("Content-Disposition:attachment;filename=".$filename.".csv");
-        header("Cache-control: private");
-        header("Content-type: application/force-download");
-        header("Content-transfer-encoding: binary\n");
-
-        fputcsv($output, array('Type', 'Quantity', 'Volume'));
-        foreach($result as $item) {
-            fputcsv($output, $item);
-        }
-        fclose($output) or die("Can't close php://output");
+        $this->buildCSV($filename, $result);
     }
 }
