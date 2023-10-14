@@ -28,7 +28,7 @@
             @endif
 
             @foreach($oreTypes as $moonOre)
-                <input id="ore-type-{{ $moonOre->typeID }}" name="ore-type-{{ $moonOre->typeID }}" data-groupid="{{ $groupTypeID }}" rel="{{ $moonOre->typeID }}" class="ore-type-input" type="number" max="100" min="0" value="{{ $taxSettingValues->where('type_id', $moonOre->typeID)->first()->tax ?? 0 }}">
+                <input id="ore-type-{{ $moonOre->typeID }}" name="ore-type-{{ $moonOre->typeID }}" data-groupid="{{ $groupTypeID }}" rel="{{ $moonOre->typeID }}" class="ore-type-input" type="number" max="100" min="0" value="{{ $taxSettingValues->where('type_id', $moonOre->typeID)->first()->tax ?? 0 }}"><b>%</b>
                 <label for="ore-type-{{ $moonOre->typeID }}">{{ $moonOre->typeName }}</label>
                 <br>
             @endforeach

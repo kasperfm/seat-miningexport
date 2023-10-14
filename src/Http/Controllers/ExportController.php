@@ -45,9 +45,19 @@ class ExportController extends Controller
     public function saveTaxSettings(Request $request)
     {
         foreach ($request->get('taxvalues') ?? [] as $setting) {
+            $value = $setting['value'];
+
+            if ($value > 100) {
+                $value = 100;
+            }
+
+            if ($value < 0) {
+                $value = 0;
+            }
+
             TaxSetting::updateOrCreate(
                 ['type_id' => $setting['type_id'], 'group_id' => $setting['group_id']],
-                ['tax' => $setting['value']]
+                ['tax' => $value]
             );
         }
 
