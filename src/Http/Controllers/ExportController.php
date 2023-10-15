@@ -125,6 +125,8 @@ class ExportController extends Controller
             $moonOreTax = !empty($setting) ? $setting->tax : 0;
             $taxedQuantity = ($quantity / 100) * $moonOreTax;
 
+            $taxedQuantity = floor($taxedQuantity);
+
             if ($taxedQuantity == 0) {
                 continue;
             }
@@ -166,6 +168,8 @@ class ExportController extends Controller
             }
 
             $volume = $quantity * $volumeValue;
+
+            $quantity = floor($quantity);
 
             $result[$type->typeName] = [
                 'type' => $type->typeName,
