@@ -12,7 +12,7 @@
     <form>
         @foreach($moonOres as $groupTypeID => $oreTypes)
             @if($groupTypeID == '1923')
-                    <h3>R64</h3>
+                <h3>R64</h3>
             @endif
             @if($groupTypeID == '1922')
                 <h3>R32</h3>

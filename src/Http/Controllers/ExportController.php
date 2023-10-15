@@ -118,13 +118,16 @@ class ExportController extends Controller
                 if (!$type) {
                     $type = $mining->type;
                     $volumeValue = $mining->type->volume;
-
                 }
             }
 
             $setting = TaxSetting::where('type_id', $type->typeID)->first();
             $moonOreTax = !empty($setting) ? $setting->tax : 0;
             $taxedQuantity = ($quantity / 100) * $moonOreTax;
+
+            if ($taxedQuantity == 0) {
+                continue;
+            }
 
             $volume = $taxedQuantity * $volumeValue;
 
