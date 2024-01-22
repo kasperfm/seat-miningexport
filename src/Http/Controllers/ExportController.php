@@ -68,8 +68,12 @@ class ExportController extends Controller
     {
         $fromDate = $request->get('from_date');
         $toDate = $request->get('to_date');
-
-        $this->generateOutput($fromDate, $toDate);
+        if ($request->get('with_details') == "true") {
+            $withDetails = true;
+        } else {
+            $withDetails = false;
+        }
+        $this->generateOutput($fromDate, $toDate, $withDetails);
     }
 
     public function requestToGenerateTaxReport(Request $request)
@@ -80,7 +84,7 @@ class ExportController extends Controller
         $this->generateTaxReportOutput($fromDate, $toDate);
     }
 
-    private function buildCSV($filename, $input)
+    private function buildCSV($filename, $input, $withDetails = false)
     {
         $output = fopen("php://output",'w') or die("Can't open php://output");
 
@@ -89,7 +93,11 @@ class ExportController extends Controller
         header("Content-type: application/force-download");
         header("Content-transfer-encoding: binary\n");
 
-        fputcsv($output, array('Type', 'Quantity', 'Volume'));
+        if ($withDetails) {
+            fputcsv($output, array('Character', 'Type', 'Quantity', 'Volume'));
+        } else {
+            fputcsv($output, array('Type', 'Quantity', 'Volume'));
+        }
         foreach($input as $item) {
             fputcsv($output, $item);
         }
@@ -143,41 +151,73 @@ class ExportController extends Controller
         $this->buildCSV($filename, $result);
     }
 
-    public function generateOutput($fromDate, $toDate)
+    public function generateOutput($fromDate, $toDate, $withDetails = false)
     {
-        $filename = 'corp-mining-ledger-' . $fromDate . '_' . $toDate;
-        $entries = CharacterMining::select('date', 'type_id', 'quantity', 'character_id')
-            ->whereBetween('date', [$fromDate, $toDate])
-            ->orderBy('time', 'asc')
-            ->get()
-            ->groupBy('type_id');
+        $fromDate = carbon($fromDate);
+        $toDate = carbon($toDate);
+
+        $filename = ($withDetails ? 'detailed-' : '') . 'corp-mining-ledger-' . $fromDate->toDateString() . '_' . $toDate->toDateString();
 
         $result = [];
 
-        foreach($entries as $entry) {
-            $quantity = 0;
-            $volumeValue = 0;
-            $type = null;
-            foreach ($entry as $mining) {
-                $quantity += $mining->quantity;
+        if ($withDetails) {
+            $entries = CharacterMining::with(['character', 'type'])->select('date', 'type_id', 'quantity', 'character_id')
+                ->whereBetween('date', [$fromDate->toDateString(), $toDate->toDateString()])
+                ->get()
+                ->groupBy([fn($miningData) => $miningData->character->name, fn($miningData) => $miningData->type->typeName]);
 
-                if (!$type) {
-                    $type = $mining->type;
-                    $volumeValue = $mining->type->volume;
+            foreach ($entries as $toon => $toonData) {
+                foreach ($toonData as $type => $miningData) {
+                    $quantity = 0;
+                    $volumeValue = 0;
+
+                    foreach ($miningData as $dateEntry) {
+                        $quantity += $dateEntry->quantity;
+                        $volumeValue = $dateEntry->type->volume;
+                    }
+                    $quantity = floor($quantity);
+                    $volume = $quantity * $volumeValue;
+
+                    $result[] = [
+                        'character' => $toon,
+                        'type' => $type,
+                        'quantity' => $quantity,
+                        'volume' => $volume
+                    ];
                 }
             }
+        } else {
+            $entries = CharacterMining::select('date', 'type_id', 'quantity', 'character_id')
+                ->whereBetween('date', [$fromDate, $toDate])
+                ->orderBy('time', 'asc')
+                ->get()
+                ->groupBy('type_id');
 
-            $volume = $quantity * $volumeValue;
+            foreach($entries as $entry) {
+                $quantity = 0;
+                $volumeValue = 0;
+                $type = null;
+                foreach ($entry as $mining) {
+                    $quantity += $mining->quantity;
 
-            $quantity = floor($quantity);
+                    if (!$type) {
+                        $type = $mining->type;
+                        $volumeValue = $mining->type->volume;
+                    }
+                }
 
-            $result[$type->typeName] = [
-                'type' => $type->typeName,
-                'quantity' => $quantity,
-                'volume' => $volume
-            ];
+                $volume = $quantity * $volumeValue;
+
+                $quantity = floor($quantity);
+
+                $result[$type->typeName] = [
+                    'type' => $type->typeName,
+                    'quantity' => $quantity,
+                    'volume' => $volume
+                ];
+            }
         }
 
-        $this->buildCSV($filename, $result);
+        $this->buildCSV($filename, $result, $withDetails);
     }
 }
