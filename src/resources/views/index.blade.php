@@ -15,8 +15,8 @@
 
     <hr>
 
-    <label for="datepicker_from">From date: </label> <input type="datetime-local" id="datepicker_from" name="datepicker_from">
-    <label for="datepicker_to">To date: </label> <input type="datetime-local" id="datepicker_to" name="datepicker_to"><br>
+    <label for="datepicker_from">From date: </label> <input type="date" id="datepicker_from" name="datepicker_from">
+    <label for="datepicker_to">To date: </label> <input type="date" id="datepicker_to" name="datepicker_to"><br>
     <label for="withdetails">Include characters in report</label>
     <input type="checkbox" name="withdetails" id="withdetails">
     <hr>
