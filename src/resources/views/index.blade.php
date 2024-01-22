@@ -15,21 +15,22 @@
 
     <hr>
 
-    <p>From date: <input type="text" id="datepicker_from"> - To date: <input type="text" id="datepicker_to"></p>
+    <label for="datepicker_from">From date: </label> <input type="datetime-local" id="datepicker_from" name="datepicker_from">
+    <label for="datepicker_to">To date: </label> <input type="datetime-local" id="datepicker_to" name="datepicker_to"><br>
+    <label for="withdetails">Include characters in report</label>
+    <input type="checkbox" name="withdetails" id="withdetails">
     <hr>
     <button class="btn btn-info" id="generate_mining_csv">Generate Report</button>  <button class="btn btn-warning" id="generate_tax_csv">Tax Report</button>
 @endsection
 
 @push('javascript')
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-
     <script type="application/javascript">
         $( function() {
             function generateReport(url) {
                 var params = {
                     from_date: $("#datepicker_from").val(),
-                    to_date: $("#datepicker_to").val()
+                    to_date: $("#datepicker_to").val(),
+                    with_details: $("#withdetails").prop('checked')
                 };
 
                 if (!params.from_date || !params.to_date) {
@@ -47,9 +48,6 @@
                     alert('Please allow popups for this website');
                 }
             }
-
-            $("#datepicker_from").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
-            $("#datepicker_to").datepicker({ minDate: "-4M", maxDate: "+1D", firstDay: 1, dateFormat: "yy-mm-dd" });
 
             $("#generate_mining_csv").click(function () {
                 generateReport("{{ route('miningexport.generate') }}?");
