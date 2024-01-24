@@ -4,6 +4,8 @@ namespace KasperFM\Seat\MiningExport\Http\Controllers;
 
 use KasperFM\Seat\MiningExport\Models\TaxSetting;
 use Seat\Eveapi\Models\Industry\CharacterMining;
+use Seat\Eveapi\Models\Character\CharacterInfo;
+use Seat\Web\Models\User;
 use Seat\Eveapi\Models\Sde\InvType;
 use Seat\Web\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -68,12 +70,18 @@ class ExportController extends Controller
     {
         $fromDate = $request->get('from_date');
         $toDate = $request->get('to_date');
+        
+        $withDetails = false;
         if ($request->get('with_details') == "true") {
             $withDetails = true;
-        } else {
-            $withDetails = false;
         }
-        $this->generateOutput($fromDate, $toDate, $withDetails);
+
+        $groupByMainToon = false;
+        if ($request->get('group_by_main') == "true") {
+            $groupByMainToon = true;
+        }
+
+        $this->generateOutput($fromDate, $toDate, $withDetails, $groupByMainToon);
     }
 
     public function requestToGenerateTaxReport(Request $request)
@@ -151,7 +159,7 @@ class ExportController extends Controller
         $this->buildCSV($filename, $result);
     }
 
-    public function generateOutput($fromDate, $toDate, $withDetails = false)
+    public function generateOutput($fromDate, $toDate, $withDetails = false, $groupByMainToon = false)
     {
         $fromDate = carbon($fromDate);
         $toDate = carbon($toDate);
@@ -161,29 +169,65 @@ class ExportController extends Controller
         $result = [];
 
         if ($withDetails) {
-            $entries = CharacterMining::with(['character', 'type'])->select('date', 'type_id', 'quantity', 'character_id')
-                ->whereBetween('date', [$fromDate->toDateString(), $toDate->toDateString()])
-                ->get()
-                ->groupBy([fn($miningData) => $miningData->character->name, fn($miningData) => $miningData->type->typeName]);
+            if ($groupByMainToon) {
+                $users = User::with(['characters', 'main_character:character_id,name', 'characters.mining:character_id,date,type_id,quantity'])
+                    ->whereHas('characters.mining', function ($query) use($fromDate, $toDate) {
+                        $query->whereBetween('date', [$fromDate->toDateString(), $toDate->toDateString()]);
+                    })
+                    ->get();
 
-            foreach ($entries as $toon => $toonData) {
-                foreach ($toonData as $type => $miningData) {
-                    $quantity = 0;
-                    $volumeValue = 0;
+                foreach ($users as $user) {
+                    $character_ids = $user->characters->pluck('character_id');
+                    $main_toon_name = $user->main_character()->pluck('name')->first();
+                    $entries = CharacterMining::with(['character', 'type'])->select('date', 'type_id', 'quantity', 'character_id')
+                        ->whereIn('character_id', $character_ids->toArray())
+                        ->whereBetween('date', [$fromDate->toDateString(), $toDate->toDateString()])
+                        ->get()
+                        ->groupBy([fn($miningData) => $miningData->type->typeName]);
 
-                    foreach ($miningData as $dateEntry) {
-                        $quantity += $dateEntry->quantity;
-                        $volumeValue = $dateEntry->type->volume;
+                    foreach ($entries as $type => $miningData) {
+                        $quantity = 0;
+                        $volumeValue = 0;
+                        foreach ($miningData as $dateEntry) {
+                            $quantity += $dateEntry->quantity;
+                            $volumeValue = $dateEntry->type->volume;
+                        }
+                        $quantity = floor($quantity);
+                        $volume = $quantity * $volumeValue;
+
+                        $result[] = [
+                            'character' => $main_toon_name,
+                            'type' => $type,
+                            'quantity' => $quantity,
+                            'volume' => $volume
+                        ];
                     }
-                    $quantity = floor($quantity);
-                    $volume = $quantity * $volumeValue;
+                }
+            } else {
+                $entries = CharacterMining::with(['character', 'type'])->select('date', 'type_id', 'quantity', 'character_id')
+                    ->whereBetween('date', [$fromDate->toDateString(), $toDate->toDateString()])
+                    ->get()
+                    ->groupBy([fn($miningData) => $miningData->character->name, fn($miningData) => $miningData->type->typeName]);
 
-                    $result[] = [
-                        'character' => $toon,
-                        'type' => $type,
-                        'quantity' => $quantity,
-                        'volume' => $volume
-                    ];
+                foreach ($entries as $toon => $toonData) {
+                    foreach ($toonData as $type => $miningData) {
+                        $quantity = 0;
+                        $volumeValue = 0;
+
+                        foreach ($miningData as $dateEntry) {
+                            $quantity += $dateEntry->quantity;
+                            $volumeValue = $dateEntry->type->volume;
+                        }
+                        $quantity = floor($quantity);
+                        $volume = $quantity * $volumeValue;
+
+                        $result[] = [
+                            'character' => $toon,
+                            'type' => $type,
+                            'quantity' => $quantity,
+                            'volume' => $volume
+                        ];
+                    }
                 }
             }
         } else {

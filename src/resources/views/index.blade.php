@@ -19,6 +19,8 @@
     <label for="datepicker_to">To date: </label> <input type="date" id="datepicker_to" name="datepicker_to"><br>
     <label for="withdetails">Include characters in report</label>
     <input type="checkbox" name="withdetails" id="withdetails">
+    <label for="group_by_main">... and group entries by main toon</label>
+    <input type="checkbox" name="group_by_main" id="group_by_main">
     <hr>
     <button class="btn btn-info" id="generate_mining_csv">Generate Report</button>  <button class="btn btn-warning" id="generate_tax_csv">Tax Report</button>
 @endsection
@@ -30,7 +32,8 @@
                 var params = {
                     from_date: $("#datepicker_from").val(),
                     to_date: $("#datepicker_to").val(),
-                    with_details: $("#withdetails").prop('checked')
+                    with_details: $("#withdetails").prop('checked'),
+                    group_by_main: $("#group_by_main").prop('checked')
                 };
 
                 if (!params.from_date || !params.to_date) {
