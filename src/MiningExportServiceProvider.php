@@ -86,9 +86,4 @@ class MiningExportServiceProvider extends AbstractSeatPlugin
     {
         return 'kasperfm';
     }
-
-    public function getVersion(): string
-    {
-        return config('miningexport.config.version');
-    }
 }
